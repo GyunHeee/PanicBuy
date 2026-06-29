@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { BacktestTable } from "../components/BacktestTable";
 import { Disclaimer } from "../components/Disclaimer";
+import { ScoreTrendChart } from "../components/ScoreTrendChart";
+import { SimilarDates } from "../components/SimilarDates";
 import { SignalDashboard } from "../components/SignalDashboard";
 import type { SignalResult } from "../types";
 
@@ -77,6 +79,8 @@ export default async function Home() {
           </header>
 
           <SignalDashboard signal={signal} error={error} />
+          <ScoreTrendChart />
+          <SimilarDates totalScore={signal?.totalScore ?? null} />
           <BacktestTable />
 
           <footer className="border-t border-slate-200 py-6">

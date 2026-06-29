@@ -13,6 +13,7 @@ import {
   calculateRateChange
 } from "../../../lib/indicators";
 import { calculateSignal } from "../../../lib/scoring";
+import { saveDailyScore } from "../../../lib/scoreHistory";
 
 function latestFiniteIndex(values: number[]): number {
   for (let index = values.length - 1; index >= 0; index -= 1) {
@@ -28,7 +29,20 @@ function finiteBefore(values: number[], index: number): number[] {
   return values.slice(0, index).filter((value) => Number.isFinite(value));
 }
 
-export async function GET() {
+function isAuthorized(request: Request): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return true;
+  }
+
+  return request.headers.get("authorization") === `Bearer ${cronSecret}`;
+}
+
+export async function GET(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const [vixHistory, spyHistory, rateHistory, fearGreed] = await Promise.all([
     getVixHistory("2y"),
     getSpyHistory("2y"),
@@ -37,6 +51,7 @@ export async function GET() {
   ]);
 
   const aligned = alignTimeSeriesByDate([vixHistory, spyHistory, rateHistory]);
+  const dates = aligned.map((point) => point.date);
   const vixValues = aligned.map((point) => point.values[0]);
   const spyPrices = aligned.map((point) => point.values[1]);
   const rates = aligned.map((point) => point.values[2]);
@@ -74,11 +89,25 @@ export async function GET() {
       fearGreedHistory: []
     }
   );
+  const signalWithDate = {
+    ...signal,
+    date: dates[latestIndex]
+  };
 
-  await sendDiscordSignal(signal);
+  await sendDiscordSignal(signalWithDate);
+
+  try {
+    await saveDailyScore({
+      date: signalWithDate.date,
+      totalScore: signalWithDate.totalScore,
+      signal: signalWithDate.signal
+    });
+  } catch (error) {
+    console.error("Daily score save failed", error);
+  }
 
   return NextResponse.json({
     ok: true,
-    signal
+    signal: signalWithDate
   });
 }

@@ -46,3 +46,9 @@ export interface BacktestStats {
     day365: BacktestPeriodStats;
   };
 }
+
+export interface DailyScoreRecord {
+  date: string;
+  totalScore: number;
+  signal: SignalLevel;
+}
