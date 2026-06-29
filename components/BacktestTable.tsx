@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import type { BacktestStats, SignalLevel } from "../types";
 
+type BacktestYears = 10 | 20;
+type BacktestResponse = {
+  years: BacktestYears;
+  results: BacktestStats[];
+};
+
 const SIGNAL_META: Record<SignalLevel, { emoji: string; label: string }> = {
   caution: { emoji: "🔵", label: "과열 구간" },
   neutral: { emoji: "⚪", label: "평소" },
@@ -23,6 +29,7 @@ function percentClassName(value: number): string {
 }
 
 export function BacktestTable() {
+  const [years, setYears] = useState<BacktestYears>(20);
   const [data, setData] = useState<BacktestStats[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,14 +38,14 @@ export function BacktestTable() {
 
     async function loadBacktest() {
       try {
-        const response = await fetch("/api/backtest");
+        const response = await fetch(`/api/backtest?years=${years}`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const result = (await response.json()) as BacktestStats[];
+        const result = (await response.json()) as BacktestResponse;
         if (isMounted) {
-          setData(result);
+          setData(result.results);
         }
       } catch {
         if (isMounted) {
@@ -52,7 +59,13 @@ export function BacktestTable() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [years]);
+
+  function handleYearsChange(nextYears: BacktestYears) {
+    setData(null);
+    setError(null);
+    setYears(nextYears);
+  }
 
   if (error) {
     return (
@@ -65,9 +78,15 @@ export function BacktestTable() {
   if (!data) {
     return (
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950">
+            백테스트 결과
+          </h2>
+          <YearSelector years={years} onChange={handleYearsChange} />
+        </div>
         <div className="flex items-center gap-3 text-sm text-slate-600">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
-          백테스트 계산 중... (최대 1분 소요)
+          {years}년 백테스트 계산 중... (최대 1분 소요)
         </div>
       </section>
     );
@@ -76,9 +95,12 @@ export function BacktestTable() {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
-        <h2 className="text-lg font-semibold text-slate-950">
-          백테스트 결과
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950">
+            백테스트 결과 ({years}년)
+          </h2>
+          <YearSelector years={years} onChange={handleYearsChange} />
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
@@ -160,5 +182,32 @@ export function BacktestTable() {
         </table>
       </div>
     </section>
+  );
+}
+
+function YearSelector({
+  years,
+  onChange
+}: {
+  years: BacktestYears;
+  onChange: (years: BacktestYears) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
+      {[20, 10].map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option as BacktestYears)}
+          className={`rounded px-3 py-1.5 text-sm font-medium ${
+            years === option
+              ? "bg-white text-slate-950 shadow-sm"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          {option}년
+        </button>
+      ))}
+    </div>
   );
 }

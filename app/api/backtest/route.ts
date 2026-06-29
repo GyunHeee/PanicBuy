@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server";
 import { runBacktest } from "../../../lib/backtest";
 
-export async function GET() {
+function parseYears(value: string | null): 10 | 20 {
+  return value === "10" ? 10 : 20;
+}
+
+export async function GET(request: Request) {
   try {
-    console.log("Backtest API: starting 10-year backtest");
+    const { searchParams } = new URL(request.url);
+    const years = parseYears(searchParams.get("years"));
+    console.log(`Backtest API: starting ${years}-year backtest`);
     const startedAt = Date.now();
-    const result = await runBacktest(10);
+    const result = await runBacktest(years);
     console.log(
       `Backtest API: completed in ${((Date.now() - startedAt) / 1000).toFixed(
         2
-      )}s`
+      )}s (${years}y)`
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      years,
+      results: result
+    });
   } catch (error) {
     console.error("Backtest API failed", error);
     return NextResponse.json(

@@ -116,14 +116,15 @@ function buildStats(labels: LabeledSignal[], spyPrices: number[]): BacktestStats
   }));
 }
 
-// Runs a rolling-window signal backtest. Current data fetchers cap Yahoo history at 10y,
-// so runBacktest(10) uses the first 504 trading days as warm-up inside that range.
-export async function runBacktest(years: number = 10): Promise<BacktestStats[]> {
-  const yahooPeriod = years <= 2 ? "2y" : "10y";
+// Runs a rolling-window signal backtest. It fetches years + 2 years so the
+// first labeled day has a full 504-trading-day historical window.
+export async function runBacktest(years: number = 20): Promise<BacktestStats[]> {
+  const historyYears = years + 2;
+  const yahooPeriod = `${historyYears}y` as const;
   const [spyHistory, vixHistory, rateHistory] = await Promise.all([
     getSpyHistory(yahooPeriod),
     getVixHistory(yahooPeriod),
-    get10yRateHistory()
+    get10yRateHistory(historyYears)
   ]);
 
   const aligned = alignTimeSeriesByDate([spyHistory, vixHistory, rateHistory]);

@@ -32,9 +32,9 @@ function formatPercent(value: number): string {
 async function run() {
   loadLocalEnv();
 
-  console.time("runBacktest(10)");
-  const stats = await runBacktest(10);
-  console.timeEnd("runBacktest(10)");
+  console.time("runBacktest(20)");
+  const stats = await runBacktest(20);
+  console.timeEnd("runBacktest(20)");
 
   console.table(
     stats.map((stat) => ({
@@ -54,7 +54,7 @@ async function run() {
   const alertCount = stats.find((stat) => stat.signal === "alert")?.occurrences ?? 0;
   if (alertCount >= 100) {
     console.warn(
-      "alert 발생 횟수가 10년에 수백 번 수준이면 너무 자주 발생하는 것일 수 있습니다."
+      "alert 발생 횟수가 선택한 기간에 수백 번 수준이면 너무 자주 발생하는 것일 수 있습니다."
     );
   }
 

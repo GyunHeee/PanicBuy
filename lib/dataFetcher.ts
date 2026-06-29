@@ -2,7 +2,7 @@ import yahooFinance from "yahoo-finance2";
 
 export type TimeSeriesPoint = { date: string; value: number };
 
-type Period = "2y" | "10y";
+type Period = `${number}y`;
 type YahooHistoricalRow = {
   date?: Date | string;
   close?: number | null;
@@ -35,7 +35,7 @@ function yearsAgo(years: number): Date {
 }
 
 function periodToYears(period: Period): number {
-  return period === "2y" ? 2 : 10;
+  return Number(period.replace("y", ""));
 }
 
 function sortAscending(points: TimeSeriesPoint[]): TimeSeriesPoint[] {
@@ -198,20 +198,22 @@ function parseYahooChartPayload(payload: unknown): TimeSeriesPoint[] {
 
 // Returns daily VIX close history sorted from oldest to newest.
 export async function getVixHistory(
-  period: "2y" | "10y"
+  period: Period
 ): Promise<TimeSeriesPoint[]> {
   return getYahooHistory("^VIX", period);
 }
 
 // Returns daily SPY close history sorted from oldest to newest.
 export async function getSpyHistory(
-  period: "2y" | "10y"
+  period: Period
 ): Promise<TimeSeriesPoint[]> {
   return getYahooHistory("SPY", period);
 }
 
-// Returns 10 years of FRED DGS10 values sorted from oldest to newest.
-export async function get10yRateHistory(): Promise<TimeSeriesPoint[]> {
+// Returns FRED DGS10 values sorted from oldest to newest.
+export async function get10yRateHistory(
+  years: number = 10
+): Promise<TimeSeriesPoint[]> {
   const apiKey = process.env.FRED_API_KEY;
   if (!apiKey) {
     throw new Error("FRED_API_KEY is required to fetch DGS10 history");
@@ -221,7 +223,7 @@ export async function get10yRateHistory(): Promise<TimeSeriesPoint[]> {
   url.searchParams.set("series_id", "DGS10");
   url.searchParams.set("api_key", apiKey);
   url.searchParams.set("file_type", "json");
-  url.searchParams.set("observation_start", formatDate(yearsAgo(10)));
+  url.searchParams.set("observation_start", formatDate(yearsAgo(years)));
 
   let response: Response;
   try {
