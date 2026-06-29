@@ -108,54 +108,61 @@ export function ScoreTrendChart() {
           </div>
         ) : !data ? (
           <div className="h-full animate-pulse rounded-md bg-slate-100" />
-        ) : data.length < 5 ? (
+        ) : data.length === 0 ? (
           <div className="flex h-full items-center justify-center rounded-md bg-slate-50 px-4 text-center text-sm text-slate-500">
-            아직 충분한 기록이 쌓이지 않았어요. 매일 자동으로 기록이 쌓이니 며칠 후 다시 확인해보세요.
+            아직 기록이 없어요. 매일 자동으로 기록이 쌓이니 며칠 후 다시 확인해보세요.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 10, right: 16, bottom: 8, left: 0 }}
-            >
-              <ReferenceArea y1={0} y2={20} fill="#dbeafe" fillOpacity={0.45} />
-              <ReferenceArea y1={21} y2={45} fill="#f1f5f9" fillOpacity={0.8} />
-              <ReferenceArea y1={46} y2={70} fill="#fef3c7" fillOpacity={0.55} />
-              <ReferenceArea y1={71} y2={100} fill="#fee2e2" fillOpacity={0.55} />
-              <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                minTickGap={24}
-                tick={{ fill: "#64748b", fontSize: 12 }}
-              />
-              <YAxis
-                domain={[0, 100]}
-                tick={{ fill: "#64748b", fontSize: 12 }}
-                width={32}
-              />
-              <Tooltip
-                formatter={(value, name, props) => {
-                  const payload = props.payload as DailyScoreRecord | undefined;
-                  if (name === "totalScore") {
-                    return [
-                      `${Number(value).toFixed(0)}점 (${payload ? signalLabel(payload.signal) : ""})`,
-                      "점수"
-                    ];
-                  }
-                  return [value, name];
-                }}
-                labelFormatter={(label) => `날짜: ${label}`}
-              />
-              <Line
-                type="monotone"
-                dataKey="totalScore"
-                stroke="#0f172a"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={data}
+                margin={{ top: 10, right: 16, bottom: 8, left: 0 }}
+              >
+                <ReferenceArea y1={0} y2={20} fill="#dbeafe" fillOpacity={0.45} />
+                <ReferenceArea y1={21} y2={45} fill="#f1f5f9" fillOpacity={0.8} />
+                <ReferenceArea y1={46} y2={70} fill="#fef3c7" fillOpacity={0.55} />
+                <ReferenceArea y1={71} y2={100} fill="#fee2e2" fillOpacity={0.55} />
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  minTickGap={24}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                  width={32}
+                />
+                <Tooltip
+                  formatter={(value, name, props) => {
+                    const payload = props.payload as DailyScoreRecord | undefined;
+                    if (name === "totalScore") {
+                      return [
+                        `${Number(value).toFixed(0)}점 (${payload ? signalLabel(payload.signal) : ""})`,
+                        "점수"
+                      ];
+                    }
+                    return [value, name];
+                  }}
+                  labelFormatter={(label) => `날짜: ${label}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="totalScore"
+                  stroke="#0f172a"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            {data.length === 1 ? (
+              <p className="mt-2 text-center text-xs text-slate-500">
+                기록이 1개라 추이는 아직 제한적이에요.
+              </p>
+            ) : null}
+          </div>
         )}
       </div>
     </section>
