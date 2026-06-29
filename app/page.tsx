@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { BacktestTable } from "../components/BacktestTable";
 import { Disclaimer } from "../components/Disclaimer";
-import { IndicatorGrid } from "../components/IndicatorGrid";
-import { SignalCard } from "../components/SignalCard";
+import { SignalDashboard } from "../components/SignalDashboard";
 import type { SignalResult } from "../types";
 
 function isSignalResult(value: unknown): value is SignalResult {
@@ -16,7 +15,9 @@ function isSignalResult(value: unknown): value is SignalResult {
     typeof result.totalScore === "number" &&
     typeof result.signal === "string" &&
     typeof result.description === "string" &&
+    typeof result.beginnerDescription === "string" &&
     Array.isArray(result.conditionsMet) &&
+    Array.isArray(result.beginnerConditionsMet) &&
     typeof result.rawValues === "object" &&
     result.rawValues !== null &&
     typeof result.scores === "object" &&
@@ -75,8 +76,7 @@ export default async function Home() {
             </h1>
           </header>
 
-          <SignalCard signal={signal} error={error} />
-          <IndicatorGrid signal={signal} />
+          <SignalDashboard signal={signal} error={error} />
           <BacktestTable />
 
           <footer className="border-t border-slate-200 py-6">

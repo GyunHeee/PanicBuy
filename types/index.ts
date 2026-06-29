@@ -21,7 +21,9 @@ export interface SignalResult {
   totalScore: number;
   signal: SignalLevel;
   description: string;
+  beginnerDescription: string;
   conditionsMet: string[];
+  beginnerConditionsMet: string[];
   rawValues: IndicatorRaw;
   scores: IndicatorScore;
 }

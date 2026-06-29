@@ -37,6 +37,17 @@ const DESCRIPTION_BY_SIGNAL: Record<SignalLevel, string> = {
   alert: "시장 전반에 강한 공포 신호가 감지되는 구간이에요"
 };
 
+const BEGINNER_DESCRIPTION_BY_SIGNAL: Record<SignalLevel, string> = {
+  caution:
+    "지금은 시장이 많이 올라서 들뜬 상태예요. 이럴 때 너무 많이 사면 나중에 떨어질 때 손해를 크게 볼 수 있어요.",
+  neutral:
+    "지금은 특별히 불안하거나 들뜬 분위기가 없는, 평범한 시장 상태예요.",
+  watch:
+    "시장에 약간 불안한 분위기가 보여요. 역사적으로 이런 시기엔 주가가 단기간 흔들렸다가 회복하는 경우가 많았어요.",
+  alert:
+    "지금은 시장에 꽤 강한 불안감이 퍼져있는 상태예요. 무서운 시기지만, 과거 데이터를 보면 이런 시기에 꾸준히 투자한 사람들이 나쁘지 않은 결과를 얻은 경우도 많았어요."
+};
+
 function todayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -128,6 +139,30 @@ function buildConditions(
   return conditions;
 }
 
+export function mapToBeginnerLanguage(condition: string): string {
+  if (condition.includes("VIX")) {
+    return "사람들이 평소보다 많이 불안해하고 있어요 (VIX 기준)";
+  }
+
+  if (condition.includes("200일선")) {
+    return "최근 평균 가격보다 주가가 꽤 많이 떨어져 있어요";
+  }
+
+  if (condition.includes("금리")) {
+    return "최근 한 달 동안 미국 금리가 빠르게 올랐어요 (주식엔 부담 요인)";
+  }
+
+  if (condition.includes("RSI")) {
+    return "최근 주가가 단기간에 많이 내려온 상태예요 (RSI 기준)";
+  }
+
+  if (condition.includes("공포탐욕")) {
+    return "투자자들이 평소보다 겁을 많이 내는 분위기예요 (공포탐욕지수 기준)";
+  }
+
+  return condition;
+}
+
 // Converts raw indicator values into weighted scores and a non-advisory market signal.
 export function calculateSignal(
   rawValues: IndicatorRaw,
@@ -182,13 +217,16 @@ export function calculateSignal(
       scores.fearGreed
   );
   const signal = toSignalLevel(totalScore);
+  const conditionsMet = buildConditions(rawValues, riskPercentiles, hasFearGreed);
 
   return {
     date: todayString(),
     totalScore,
     signal,
     description: DESCRIPTION_BY_SIGNAL[signal],
-    conditionsMet: buildConditions(rawValues, riskPercentiles, hasFearGreed),
+    beginnerDescription: BEGINNER_DESCRIPTION_BY_SIGNAL[signal],
+    conditionsMet,
+    beginnerConditionsMet: conditionsMet.map(mapToBeginnerLanguage),
     rawValues,
     scores
   };

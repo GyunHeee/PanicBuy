@@ -1,7 +1,9 @@
 import type { SignalResult } from "../types";
+import type { SignalViewMode } from "./SignalCard";
 
 type IndicatorGridProps = {
   signal: SignalResult | null;
+  mode?: SignalViewMode;
 };
 
 type IndicatorKey =
