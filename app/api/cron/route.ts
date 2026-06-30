@@ -13,16 +13,43 @@ import {
   calculateRateChange
 } from "../../../lib/indicators";
 import { calculateSignal } from "../../../lib/scoring";
-import { saveDailyScore } from "../../../lib/scoreHistory";
+import {
+  getExistingScoreDates,
+  saveDailyScore
+} from "../../../lib/scoreHistory";
 
-function latestFiniteIndex(values: number[]): number {
-  for (let index = values.length - 1; index >= 0; index -= 1) {
-    if (Number.isFinite(values[index])) {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const SCORE_BACKFILL_TRADING_DAYS = 30;
+
+function latestFiniteIndex(seriesList: number[][]): number {
+  const longestLength = Math.max(...seriesList.map((values) => values.length));
+
+  for (let index = longestLength - 1; index >= 0; index -= 1) {
+    if (seriesList.every((values) => Number.isFinite(values[index]))) {
       return index;
     }
   }
 
   return -1;
+}
+
+function recentFiniteIndexes(seriesList: number[][], limit: number): number[] {
+  const indexes: number[] = [];
+  const longestLength = Math.max(...seriesList.map((values) => values.length));
+
+  for (let index = longestLength - 1; index >= 0; index -= 1) {
+    if (seriesList.every((values) => Number.isFinite(values[index]))) {
+      indexes.push(index);
+    }
+
+    if (indexes.length >= limit) {
+      break;
+    }
+  }
+
+  return indexes.reverse();
 }
 
 function finiteBefore(values: number[], index: number): number[] {
@@ -58,13 +85,14 @@ export async function GET(request: Request) {
   const rsiValues = calculateRSI(spyPrices);
   const ma200DeviationValues = calculateMA200Deviation(spyPrices);
   const rateChangeValues = calculateRateChange(rates);
+  const indicatorSeries = [
+    vixValues,
+    rsiValues,
+    ma200DeviationValues,
+    rateChangeValues
+  ];
 
-  const latestIndex = Math.min(
-    latestFiniteIndex(vixValues),
-    latestFiniteIndex(rsiValues),
-    latestFiniteIndex(ma200DeviationValues),
-    latestFiniteIndex(rateChangeValues)
-  );
+  const latestIndex = latestFiniteIndex(indicatorSeries);
 
   if (latestIndex < 0) {
     return NextResponse.json(
@@ -73,35 +101,68 @@ export async function GET(request: Request) {
     );
   }
 
-  const signal = calculateSignal(
-    {
-      vix: vixValues[latestIndex],
-      rsi: rsiValues[latestIndex],
-      ma200Deviation: ma200DeviationValues[latestIndex],
-      rate10yChange: rateChangeValues[latestIndex],
-      fearGreed
-    },
-    {
-      vixHistory: finiteBefore(vixValues, latestIndex),
-      rsiHistory: finiteBefore(rsiValues, latestIndex),
-      ma200DevHistory: finiteBefore(ma200DeviationValues, latestIndex),
-      rateChangeHistory: finiteBefore(rateChangeValues, latestIndex),
-      fearGreedHistory: []
-    }
+  function calculateSignalAtIndex(index: number, fearGreedValue: number | null) {
+    const signal = calculateSignal(
+      {
+        vix: vixValues[index],
+        rsi: rsiValues[index],
+        ma200Deviation: ma200DeviationValues[index],
+        rate10yChange: rateChangeValues[index],
+        fearGreed: fearGreedValue
+      },
+      {
+        vixHistory: finiteBefore(vixValues, index),
+        rsiHistory: finiteBefore(rsiValues, index),
+        ma200DevHistory: finiteBefore(ma200DeviationValues, index),
+        rateChangeHistory: finiteBefore(rateChangeValues, index),
+        fearGreedHistory: []
+      }
+    );
+
+    return {
+      ...signal,
+      marketDate: dates[index]
+    };
+  }
+
+  const signalWithDate = calculateSignalAtIndex(
+    latestIndex,
+    fearGreed
   );
-  const signalWithDate = {
-    ...signal,
-    date: dates[latestIndex]
-  };
 
   await sendDiscordSignal(signalWithDate);
 
   try {
-    await saveDailyScore({
-      date: signalWithDate.date,
-      totalScore: signalWithDate.totalScore,
-      signal: signalWithDate.signal
+    const candidateIndexes = recentFiniteIndexes(
+      indicatorSeries,
+      SCORE_BACKFILL_TRADING_DAYS
+    );
+    const candidateDates = candidateIndexes.map((index) => dates[index]);
+    const existingDates = await getExistingScoreDates(candidateDates);
+    const missingIndexes = candidateIndexes.filter(
+      (index) => !existingDates.has(dates[index])
+    );
+    const backfillRecords = missingIndexes.map((index) => {
+      const signalForDate =
+        index === latestIndex
+          ? signalWithDate
+          : calculateSignalAtIndex(index, null);
+
+      return {
+        marketDate: signalForDate.marketDate,
+        totalScore: signalForDate.totalScore,
+        signal: signalForDate.signal
+      };
     });
+
+    await Promise.all(
+      backfillRecords.map((record) =>
+        saveDailyScore(record, { overwrite: false })
+      )
+    );
+    console.info(
+      `Daily score backfill checked ${candidateIndexes.length} trading days and saved ${backfillRecords.length} missing records.`
+    );
   } catch (error) {
     console.error("Daily score save failed", error);
   }
