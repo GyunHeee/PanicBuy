@@ -13,9 +13,14 @@ import {
 } from "../../../lib/indicators";
 import { calculateSignal } from "../../../lib/scoring";
 
-function latestFiniteIndex(values: number[]): number {
-  for (let index = values.length - 1; index >= 0; index -= 1) {
-    if (Number.isFinite(values[index])) {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function latestFiniteIndex(seriesList: number[][]): number {
+  const longestLength = Math.max(...seriesList.map((values) => values.length));
+
+  for (let index = longestLength - 1; index >= 0; index -= 1) {
+    if (seriesList.every((values) => Number.isFinite(values[index]))) {
       return index;
     }
   }
@@ -45,12 +50,12 @@ export async function GET() {
     const ma200DeviationValues = calculateMA200Deviation(spyPrices);
     const rateChangeValues = calculateRateChange(rates);
 
-    const latestIndex = Math.min(
-      latestFiniteIndex(vixValues),
-      latestFiniteIndex(rsiValues),
-      latestFiniteIndex(ma200DeviationValues),
-      latestFiniteIndex(rateChangeValues)
-    );
+    const latestIndex = latestFiniteIndex([
+      vixValues,
+      rsiValues,
+      ma200DeviationValues,
+      rateChangeValues
+    ]);
 
     if (latestIndex < 0) {
       return NextResponse.json(
@@ -58,6 +63,8 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const marketDate = dates[latestIndex];
 
     const signal = calculateSignal(
       {
@@ -76,15 +83,27 @@ export async function GET() {
       }
     );
 
-    return NextResponse.json({
-      ...signal,
-      date: dates[latestIndex]
-    });
+    return NextResponse.json(
+      {
+        ...signal,
+        marketDate
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
+    );
   } catch (error) {
     console.error("Signal API failed", error);
     return NextResponse.json(
       { error: "Failed to calculate signal" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store, max-age=0"
+        }
+      }
     );
   }
 }

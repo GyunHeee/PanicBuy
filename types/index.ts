@@ -17,7 +17,8 @@ export interface IndicatorScore {
 export type SignalLevel = "caution" | "neutral" | "watch" | "alert";
 
 export interface SignalResult {
-  date: string;
+  // Market close date used as the basis for this signal, not the user's local calendar date.
+  marketDate: string;
   totalScore: number;
   signal: SignalLevel;
   description: string;
@@ -48,7 +49,14 @@ export interface BacktestStats {
 }
 
 export interface DailyScoreRecord {
-  date: string;
+  marketDate: string;
   totalScore: number;
   signal: SignalLevel;
+}
+
+export interface StreakInfo {
+  currentSignal: SignalLevel;
+  streakDays: number;
+  previousSignal: SignalLevel | null;
+  changedToday: boolean;
 }

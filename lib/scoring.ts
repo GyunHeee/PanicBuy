@@ -220,7 +220,7 @@ export function calculateSignal(
   const conditionsMet = buildConditions(rawValues, riskPercentiles, hasFearGreed);
 
   return {
-    date: todayString(),
+    marketDate: todayString(),
     totalScore,
     signal,
     description: DESCRIPTION_BY_SIGNAL[signal],

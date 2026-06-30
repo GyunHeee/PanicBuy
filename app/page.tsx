@@ -6,6 +6,9 @@ import { SimilarDates } from "../components/SimilarDates";
 import { SignalDashboard } from "../components/SignalDashboard";
 import type { SignalResult } from "../types";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function isSignalResult(value: unknown): value is SignalResult {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -13,7 +16,7 @@ function isSignalResult(value: unknown): value is SignalResult {
 
   const result = value as Partial<SignalResult>;
   return (
-    typeof result.date === "string" &&
+    typeof result.marketDate === "string" &&
     typeof result.totalScore === "number" &&
     typeof result.signal === "string" &&
     typeof result.description === "string" &&
@@ -40,7 +43,10 @@ async function getSignal(): Promise<{
 }> {
   try {
     const response = await fetch(`${await getBaseUrl()}/api/signal`, {
-      cache: "no-store"
+      cache: "no-store",
+      next: {
+        revalidate: 0
+      }
     });
 
     if (!response.ok) {
@@ -77,6 +83,10 @@ export default async function Home() {
               오늘의 시장 신호
             </h1>
           </header>
+
+          <p className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            💡 이 서비스는 미국 시장 마감 데이터를 기준으로 매일 업데이트돼요.
+          </p>
 
           <SignalDashboard signal={signal} error={error} />
           <ScoreTrendChart />

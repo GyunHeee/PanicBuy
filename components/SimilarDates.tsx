@@ -57,10 +57,10 @@ export function SimilarDates({ totalScore }: SimilarDatesProps) {
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950">
-        오늘과 비슷했던 과거 날짜
+        오늘과 비슷했던 과거 시장 마감일
       </h2>
       <p className="mt-1 text-sm text-slate-500">
-        저장된 기록 중 오늘 점수와 가장 가까웠던 날을 보여줘요.
+        시장 마감 기준 기록 중 오늘 점수와 가장 가까웠던 날을 보여줘요.
       </p>
 
       <div className="mt-4">
@@ -87,11 +87,11 @@ export function SimilarDates({ totalScore }: SimilarDatesProps) {
               const meta = SIGNAL_META[record.signal];
               return (
                 <div
-                  key={record.date}
+                  key={record.marketDate}
                   className="rounded-lg border border-slate-200 bg-slate-50 p-4"
                 >
                   <p className="text-sm font-medium text-slate-500">
-                    {record.date}
+                    {record.marketDate} 시장 마감 기준
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">
                     {Math.round(record.totalScore)}

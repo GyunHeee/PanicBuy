@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  getDaysFromKoreaToday,
+  getKoreaTodayString,
+  getMostRecentTradingDayLabel
+} from "../lib/dateUtils";
+import { StreakBadge } from "./StreakBadge";
 import type { SignalLevel, SignalResult } from "../types";
 
 export type SignalViewMode = "beginner" | "expert";
@@ -90,12 +96,28 @@ export function SignalCard({
   const conditionsMet = isBeginnerMode
     ? signal.beginnerConditionsMet
     : signal.conditionsMet;
+  const dateDiffDays = getDaysFromKoreaToday(signal.marketDate);
+  const marketDateLabel =
+    dateDiffDays >= 2
+      ? getMostRecentTradingDayLabel(signal.marketDate)
+      : `${signal.marketDate} 미국 시장 마감 기준`;
+  const koreaViewedDate = getKoreaTodayString();
 
   return (
     <section className={`rounded-lg border p-6 shadow-sm ${meta.className}`}>
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium opacity-75">{signal.date}</p>
+          <div className="flex flex-wrap gap-2 text-sm font-medium opacity-80">
+            <span className="rounded-full bg-white/60 px-3 py-1">
+              한국시간 {koreaViewedDate} 조회
+            </span>
+            <span className="rounded-full bg-white/60 px-3 py-1">
+              {marketDateLabel}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 opacity-70">
+            화면을 보는 한국 날짜와 지표가 기준으로 삼는 미국 시장 마감일은 다를 수 있어요.
+          </p>
           <h1 className="mt-3 text-3xl font-semibold md:text-4xl">
             {meta.emoji} {meta.label}
           </h1>
@@ -111,6 +133,9 @@ export function SignalCard({
               {Math.round(signal.totalScore)}
               <span className="text-lg font-medium text-slate-500">/100</span>
             </p>
+            <div className="mt-3">
+              <StreakBadge />
+            </div>
           </div>
         </div>
       </div>

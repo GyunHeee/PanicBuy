@@ -35,7 +35,7 @@ export async function sendDiscordSignal(signal: SignalResult): Promise<void> {
   const body = {
     embeds: [
       {
-        title: `${EMOJIS[signal.signal]} 오늘의 시장 신호 (${signal.date})`,
+        title: `${EMOJIS[signal.signal]} 최신 마감 기준 시장 신호 (${signal.marketDate})`,
         color: COLORS[signal.signal],
         description: signal.description,
         fields: [

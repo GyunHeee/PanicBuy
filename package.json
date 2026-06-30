@@ -10,7 +10,8 @@
     "test:fetcher": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/testFetcher.ts",
     "test:indicators": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/testIndicators.ts",
     "test:scoring": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/testScoring.ts",
-    "test:backtest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/testBacktest.ts"
+    "test:backtest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/testBacktest.ts",
+    "seed:streak": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/seedTestStreak.ts"
   },
   "dependencies": {
     "@vercel/kv": "^3.0.0",
